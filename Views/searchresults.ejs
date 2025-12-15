@@ -1,42 +1,118 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8" />
+    <title>Search Results</title>
     <style>
         body {
-            background-image: url("background3.jpg");
-            background-repeat: no-repeat;
-            background-size: 100%;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            /* MATCH HOME PAGE DARK BACKGROUND */
+            background: radial-gradient(circle at top, #1f1f1f, #0b0b0b 60%, #000000 100%);
+            color: #e6e6e6;
+            min-height: 100vh;
         }
 
         h1 {
-            color: white;
             text-align: center;
-            -webkit-text-stroke: 1px blue;
+            margin-top: 40px;
+            font-size: 42px;
+            color: #dfe3ff;
+        }
+
+        .subtitle {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 18px;
+            color: #b5b5b5;
+        }
+
+        .results-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 30px;
+            max-width: 1000px;
+            margin: 60px auto;
+            padding: 0 20px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 18px;
+            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.6);
+            padding: 30px 20px;
+            text-align: center;
+            backdrop-filter: blur(6px);
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 16px 45px rgba(0, 0, 0, 0.8);
+        }
+
+        .card h3 {
+            font-size: 26px;
+            margin-bottom: 8px;
+            color: #ffffff;
+        }
+
+        .card p {
+            font-size: 16px;
+            color: #cfcfcf;
+            margin-bottom: 22px;
+        }
+
+        .card button {
+            background-color: #7a8088;
+            border: none;
+            border-radius: 10px;
+            padding: 12px 26px;
+            color: #ffffff;
+            font-size: 15px;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+        }
+
+        .card button:hover {
+            background-color: #9aa0a8;
+            transform: scale(1.05);
+        }
+
+        .no-results {
+            text-align: center;
+            margin-top: 60px;
+            font-size: 18px;
+            color: #b5b5b5;
         }
     </style>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Search Results</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
-        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-2">
-        <a class="navbar-brand" style="color: rgb(191, 255, 161)">Search Results</a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
-            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarSupportedContent">
-            <ul class="navbar-nav mr-auto">
-            </ul>
-            <form method="POST" action='/search' class="form-inline my-2 my-lg-0">
-                <input class="form-control mr-sm-2" name="Search" type="search" placeholder="Search"
-                    aria-label="Search">
-                <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
-            </form>
+
+    <%- include("partials/header") %>
+
+    <h1>Search Results</h1>
+
+    <% if (query && query.trim() !== "") { %>
+        <div class="subtitle">
+            Results for "<strong><%= query %></strong>"
         </div>
-    </nav>
+    <% } else { %>
+        <div class="subtitle">Type something in the search bar above.</div>
+    <% } %>
+
+    <% if (results.length === 0 && query && query.trim() !== "") { %>
+        <div class="no-results">No destinations found.</div>
+    <% } %>
+
+    <div class="results-container">
+        <% results.forEach(function(dest) { %>
+            <div class="card">
+                <h3><%= dest.name %></h3>
+                <p><em><%= dest.category %></em></p>
+                <button onclick="location.href='<%= dest.url %>'">Go to page</button>
+            </div>
+        <% }); %>
+    </div>
+
 </body>
-</html>
