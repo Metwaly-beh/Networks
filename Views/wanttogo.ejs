@@ -38,5 +38,31 @@
             </form>
         </div>
     </nav>
+
+
+
+
+    <div class="container mt-4">
+    <h1>Your Want-to-Go List</h1>
+
+    <% if (list.length === 0) { %>
+        <p class="text-white">Your list is empty.</p>
+    <% } else { %>
+        <ul class="list-group">
+            <% list.forEach(destination => { %>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span><%= destination %></span>
+
+                    <form method="POST" action="/remove-from-list" class="mb-0">
+                        <input type="hidden" name="destinationName" value="<%= destination %>">
+                        <button type="submit" class="btn btn-danger btn-sm">
+                            Remove
+                        </button>
+                    </form>
+                </li>
+            <% }) %>
+        </ul>
+    <% } %>
+</div>
 </body>
 </html>
