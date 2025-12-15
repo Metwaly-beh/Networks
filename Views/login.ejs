@@ -1,62 +1,48 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Login</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            max-width: 400px;
-            margin: 50px auto;
-            padding: 20px;
+            background-image: url("background1.jpg");
+            background-repeat: no-repeat;
+            background-size: 100%;
         }
-        input {
-            width: 100%;
-            padding: 8px;
-            margin: 5px 0 15px 0;
-            box-sizing: border-box;
-        }
-        button {
-            width: 100%;
-            padding: 10px;
-            background-color: #008CBA;
+        h1 {
             color: white;
-            border: none;
-            cursor: pointer;
+            text-align: center;
+            -webkit-text-stroke: 1px black;
         }
-        button:hover {
-            background-color: #007399;
-        }
-        .error {
-            color: red;
-            margin-bottom: 10px;
-        }
-        .success {
-            color: green;
-            margin-bottom: 10px;
+        .cont {
+            position:relative;
+            left:600px;
+            top:50px;
+            color: white;
         }
     </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Welcome</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
 </head>
+
 <body>
-    <h1>Login</h1>
-    
-    <% if (error) { %>
-        <p class="error"><%= error %></p>
-    <% } %>
-    
-    <% if (success) { %>
-        <p class="success"><%= success %></p>
-    <% } %>
-    
-    <form action="/login" method="POST">
-        <label>Username:</label>
-        <input type="text" name="username" required>
-        
-        <label>Password:</label>
-        <input type="password" name="password" required>
-        
-        <button type="submit">Login</button>
-    </form>
-    
-    <p>Don't have an account? <a href="/register">Register here</a></p>
+    <div class="container">
+        <h1>Welcome</h1>
+    </div>
+    <div class="cont">
+        <form method="POST">
+            Username:<br>
+            <input type="text" name="username">
+            <br>
+            Password:<br>
+            <input type="password" name="password">
+            <br><br>
+            <input type="submit" value="Login">
+        </form>
+        <br>
+        <a href="register">I dont have an account</a>
+    </div>
 </body>
 </html>

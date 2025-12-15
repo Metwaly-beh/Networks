@@ -1,335 +1,316 @@
-const express = require('express');
-const session = require('express-session');
-const path = require('path');
-const { MongoClient, ObjectId } = require('mongodb');
+const express = require("express");
+const session = require("express-session");
+const { MongoClient } = require("mongodb");
+const path = require("path");
 
 const app = express();
 const PORT = 8080;
+// ------- Destinations list for search -------
+const destinations = [
+  { name: "Paris", category: "City", url: "/paris" },
+  { name: "Rome", category: "City", url: "/rome" },
+  { name: "Bali", category: "Island", url: "/bali" },
+  { name: "Santorini", category: "Island", url: "/santorini" },
+  { name: "Annapurna", category: "Hiking", url: "/annapurna" },
+  { name: "Inca Trail", category: "Hiking", url: "/inca" },
+];
 
 
-const url = 'mongodb://localhost:27017';
-const dbName = 'myDB';
-const collectionName = 'myCollection';
+// --------- MongoDB setup ---------
+const url = "mongodb://localhost:27017";
+const dbName = "myDB";
+const collectionName = "myCollection";
 
 let db;
 let usersCollection;
 
-
 MongoClient.connect(url)
-  .then(client => {
-    console.log('Connected to MongoDB');
+  .then((client) => {
+    console.log("Connected to MongoDB");
     db = client.db(dbName);
     usersCollection = db.collection(collectionName);
   })
-  .catch(error => console.error('MongoDB connection error:', error));
-  app.use(express.urlencoded({ extended: true }));
+  .catch((error) => console.error("MongoDB connection error:", error));
+
+// --------- Middleware ---------
+app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, "public")));
 
-app.use(session({
-  secret: 'travelling-website-secret-key',
-  resave: false,
-  saveUninitialized: false,
-  cookie: { secure: false }
-}));
+app.use(
+  session({
+    secret: "travelling-website-secret-key",
+    resave: false,
+    saveUninitialized: false,
+    cookie: { secure: false }, // OK for localhost
+  })
+);
 
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'Views'));
+// view engine
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "views")); // folder name MUST be "views"
 
+// --------- Auth helper ---------
+function requireLogin(req, res, next) {
+  if (!req.session.username) {
+    return res.redirect("/login");
+  }
+  next();
+}
 
+// --------- ROUTES ---------
 
-app.get('/register', (req, res) => {
-  res.render('registration', { error: null, success: null });
+// root → login
+app.get("/", (req, res) => {
+  res.redirect("/login");
 });
 
+// --------- Registration ---------
 
-app.post('/register', async (req, res) => {
- 
+// both URLs show the same page
+app.get("/register", (req, res) => {
+  res.render("registration", { error: null, success: null });
+});
+
+app.get("/registration", (req, res) => {
+  res.render("registration", { error: null, success: null });
+});
+
+// form submits to /register (POST)
+app.post("/register", async (req, res) => {
+  try {
     const { username, password } = req.body;
 
-    if (!username || !password || username.trim() === '' || password.trim() === '') {
-      return res.render('registration', { 
-        error: 'Username and password cannot be empty', 
-        success: null 
+    if (!username || !password || username.trim() === "" || password.trim() === "") {
+      return res.render("registration", {
+        error: "Username and password cannot be empty",
+        success: null,
       });
     }
 
+    const existingUser = await usersCollection.findOne({ username });
 
-    const existingUser = await usersCollection.findOne({ username: username });
-    
     if (existingUser) {
-      return res.render('registration', { 
-        error: 'Username already in DB', 
-        success: null 
+      return res.render("registration", {
+        error: "Username already in DB",
+        success: null,
       });
     }
-
 
     await usersCollection.insertOne({
-      username: username,
-      password: password,
-      wantToGoList: []
+      username,
+      password,
+      wantToGoList: [],
     });
 
-    console.log('User registered successfully:', username);
-
-
-    res.redirect('/login?registered=true');
-
- 
-});
-
-
-app.get('/login', (req, res) => {
-  const registered = req.query.registered === 'true';
-  res.render('login', { 
-    error: null, 
-    success: registered ? 'Registration successful! Please login.' : null 
-  });
-});
-
-app.post('/login', async (req, res) => {
-  try {
-    const { username, password } = req.body;
-
-    const user = await usersCollection.findOne({ username: username, password: password });
-
-    if (!user) {
-      return res.render('login', { 
-        error: 'Invalid username or password', 
-        success: null 
-      });
-    }
-
-    req.session.userId = user._id;
-    req.session.username = user.username;
-    res.redirect('/home');
-
-  } catch (error) {
-    console.error('Login error:', error);
-    res.render('login', { 
-      error: 'An error occurred during login', 
-      success: null 
+    console.log("User registered successfully:", username);
+    res.redirect("/login?registered=true");
+  } catch (err) {
+    console.error("Registration error:", err);
+    res.render("registration", {
+      error: "An error occurred. Please try again.",
+      success: null,
     });
   }
 });
 
-app.get('/destination/:name', async (req, res) => {
-  
-  if (!req.session.userId) {
-    return res.redirect('/login');
-  }
 
-  const destinationName = req.params.name;
-
-  
-  const destinations = {
-    'paris': {
-      name: 'Paris',
-      country: 'France',
-      description: 'The City of Light is known for the Eiffel Tower, world-class museums like the Louvre, romantic streets, and amazing French cuisine. Best time to visit: April to June or September to November.',
-      videoUrl: 'https://www.youtube.com/embed/AQ6GmpMu5L8'  // Paris travel video
-    },
-    'maldives': {
-      name: 'Maldives',
-      country: 'Indian Ocean',
-      description: 'A tropical paradise with crystal-clear waters, white sandy beaches, and luxurious overwater bungalows. Perfect for diving, snorkeling, and relaxation. Best time to visit: November to April.',
-      videoUrl: 'https://www.youtube.com/embed/RScekDK5bPM'  // Maldives travel video
-    },
-    'tokyo': {
-      name: 'Tokyo',
-      country: 'Japan',
-      description: 'A vibrant blend of traditional culture and modern technology. Experience ancient temples, incredible food, cherry blossoms, and cutting-edge technology. Best time to visit: March to May or September to November.',
-      videoUrl: 'https://www.youtube.com/embed/DqE4eJanJv4'  // Tokyo travel video
-    },
-    'swiss-alps': {
-      name: 'Swiss Alps',
-      country: 'Switzerland',
-      description: 'Majestic mountain peaks, pristine lakes, charming villages, and world-class skiing. Experience breathtaking scenery, hiking trails, and Swiss chocolate. Best time to visit: December to March for skiing, June to September for hiking.',
-      videoUrl: 'https://www.youtube.com/embed/vRVUCOw4rRQ'  // Swiss Alps video
-    },
-
-      'italy': {
-      name: 'Italy',
-      country: 'Italy',
-      description: 'Pizza.',
-      videoUrl: 'https://www.youtube.com/embed/h656vyNvAko'// Amr sherif Pizza video
-    }
-    
-  };
-
-  const destination = destinations[destinationName.toLowerCase()];
-
-  if (!destination) {
-    return res.send('Destination not found');
-  }
-
-
-    const user = await usersCollection.findOne({ _id: new ObjectId(req.session.userId) });
-    const alreadyInList = user.wantToGoList && user.wantToGoList.includes(destination.name);
-
-  res.render('destination', { 
-    destination: destination,
-    error: null,
-    success: null,
-    alreadyInList: alreadyInList,
-    username: req.session.username
-  });
+// --------- TEMP Login + Home (can be replaced by friends later) ---------
+app.get("/login", (req, res) => {
+  res.render("login", { error: null });
 });
-app.get('/want-to-go-list', async (req, res) => {
 
-  if (!req.session.userId) {
-    return res.redirect('/login');
+app.post("/login", async (req, res) => {
+  const { username, password } = req.body;
+
+  const user = await usersCollection.findOne({ username, password });
+
+  if (!user) {
+    return res.render("login", { error: "Invalid username or password" });
   }
 
+  req.session.username = username;
+  res.redirect("/home");
+});
+
+app.get("/home", requireLogin, (req, res) => {
+  res.render("home", { username: req.session.username });
+});
+
+// --------- CATEGORY PAGES (your part) ---------
+app.get("/hiking", requireLogin, (req, res) => {
+  res.render("hiking");
+});
+
+app.get("/cities", requireLogin, (req, res) => {
+  res.render("cities");
+});
+
+app.get("/islands", requireLogin, (req, res) => {
+  res.render("islands");
+});
+
+// --------- DESTINATION PAGES ---------
+app.get("/annapurna", requireLogin, async (req, res) => {
   try {
-   
-    const user = await usersCollection.findOne({ _id: new ObjectId(req.session.userId) });
-
-
-    
-    const wantToGoList = user.wantToGoList || [];
-
-    res.render('want-to-go-list', {
-      username: req.session.username,
-      destinations: wantToGoList
-    });
-
-  } catch (error) {
-    console.error('Error loading want-to-go list:', error);
-    res.send('An error occurred while loading your list');
+    const user = await usersCollection.findOne({ username: req.session.username });
+    const alreadyInList = user.wantToGoList.includes("Annapurna");
+    res.render("annapurna", { alreadyInList, message: req.query.message || null });
+  } catch (err) {
+    console.error("Error:", err);
+    res.render("annapurna", { alreadyInList: false, message: null });
   }
 });
 
-
-app.post('/add-to-list', async (req, res) => {
-
-  if (!req.session.userId) {
-    return res.redirect('/login');
-  }
-
+app.get("/inca", requireLogin, async (req, res) => {
   try {
-    const { destinationName } = req.body;
+    const user = await usersCollection.findOne({ username: req.session.username });
+    const alreadyInList = user.wantToGoList.includes("Inca Trail");
+    res.render("inca", { alreadyInList, message: req.query.message || null });
+  } catch (err) {
+    console.error("Error:", err);
+    res.render("inca", { alreadyInList: false, message: null });
+  }
+});
 
+app.get("/paris", requireLogin, async (req, res) => {
+  try {
+    const user = await usersCollection.findOne({ username: req.session.username });
+    const alreadyInList = user.wantToGoList.includes("Paris");
+    res.render("paris", { alreadyInList, message: req.query.message || null });
+  } catch (err) {
+    console.error("Error:", err);
+    res.render("paris", { alreadyInList: false, message: null });
+  }
+});
 
-    const user = await usersCollection.findOne({ _id: new ObjectId(req.session.userId) });
+app.get("/rome", requireLogin, async (req, res) => {
+  try {
+    const user = await usersCollection.findOne({ username: req.session.username });
+    const alreadyInList = user.wantToGoList.includes("Rome");
+    res.render("rome", { alreadyInList, message: req.query.message || null });
+  } catch (err) {
+    console.error("Error:", err);
+    res.render("rome", { alreadyInList: false, message: null });
+  }
+});
 
+app.get("/bali", requireLogin, async (req, res) => {
+  try {
+    const user = await usersCollection.findOne({ username: req.session.username });
+    const alreadyInList = user.wantToGoList.includes("Bali");
+    res.render("bali", { alreadyInList, message: req.query.message || null });
+  } catch (err) {
+    console.error("Error:", err);
+    res.render("bali", { alreadyInList: false, message: null });
+  }
+});
 
+app.get("/santorini", requireLogin, async (req, res) => {
+  try {
+    const user = await usersCollection.findOne({ username: req.session.username });
+    const alreadyInList = user.wantToGoList.includes("Santorini");
+    res.render("santorini", { alreadyInList, message: req.query.message || null });
+  } catch (err) {
+    console.error("Error:", err);
+    res.render("santorini", { alreadyInList: false, message: null });
+  }
+});
 
-    if (user.wantToGoList && user.wantToGoList.includes(destinationName)) {
+// --------- ADD TO WANT-TO-GO LIST ---------
+app.post("/add-to-list", requireLogin, async (req, res) => {
+  try {
+    const { destinationName, returnUrl } = req.body;
+    const username = req.session.username;
 
-      return res.redirect(`/destination/${destinationName.toLowerCase().replace(' ', '-')}?error=already`);
+    // Find the user
+    const user = await usersCollection.findOne({ username });
+
+    // Check if destination is already in the list
+    if (user.wantToGoList.includes(destinationName)) {
+      return res.redirect(`${returnUrl}?message=already`);
     }
 
-
+    // Add destination to the list
     await usersCollection.updateOne(
-      { _id: req.session.userId },
+      { username },
       { $push: { wantToGoList: destinationName } }
     );
 
-    console.log(`Added ${destinationName} to ${user.username}'s want-to-go list`);
+    console.log(`Added ${destinationName} to ${username}'s want-to-go list`);
+    res.redirect(`${returnUrl}?message=success`);
 
-
-    res.redirect(`/destination/${destinationName.toLowerCase().replace(' ', '-')}?success=added`);
-
-  } catch (error) {
-    console.error('Error adding to want-to-go list:', error);
-    res.send('An error occurred');
+  } catch (err) {
+    console.error("Error adding to want-to-go list:", err);
+    res.redirect("/home");
   }
 });
 
+// --------- WANT-TO-GO LIST PAGE ---------
+app.get("/wanttogo", requireLogin, async (req, res) => {
+  try {
+    const user = await usersCollection.findOne({ username: req.session.username });
+    const list = user.wantToGoList || [];
+    
+    res.render("wanttogo", { list });
+  } catch (err) {
+    console.error("Error loading want-to-go list:", err);
+    res.render("wanttogo", { list: [] });
+  }
+});
 
-app.get('/destination/:name', async (req, res) => {
-  if (!req.session.userId) {
-    return res.redirect('/login');
+// --------- REMOVE FROM WANT-TO-GO LIST ---------
+app.post("/remove-from-list", requireLogin, async (req, res) => {
+  try {
+    const { destinationName } = req.body;
+    const username = req.session.username;
+
+    // Remove destination from the list
+    await usersCollection.updateOne(
+      { username },
+      { $pull: { wantToGoList: destinationName } }
+    );
+
+    console.log(`Removed ${destinationName} from ${username}'s want-to-go list`);
+    res.redirect("/wanttogo");
+
+  } catch (err) {
+    console.error("Error removing from want-to-go list:", err);
+    res.redirect("/wanttogo");
+  }
+});
+
+// --------- Search ---------
+app.post("/search", requireLogin, (req, res) => {
+  const queryRaw = req.body.Search || "";
+  const query = queryRaw.toLowerCase().trim();
+
+  if (!query) {
+    return res.render("searchresults", { query: "", results: [] });
   }
 
-  const destinationName = req.params.name;
+  const results = destinations.filter((d) =>
+    d.name.toLowerCase().includes(query) ||
+    d.category.toLowerCase().includes(query)
+  );
 
-  const destinations = {
-    'paris': {
-      name: 'Paris',
-      country: 'France',
-      description: 'The City of Light is known for the Eiffel Tower, world-class museums like the Louvre, romantic streets, and amazing French cuisine. Best time to visit: April to June or September to November.',
-      videoUrl: 'https://www.youtube.com/embed/AQ6GmpMu5L8'
-    },
-    'maldives': {
-      name: 'Maldives',
-      country: 'Indian Ocean',
-      description: 'A tropical paradise with crystal-clear waters, white sandy beaches, and luxurious overwater bungalows. Perfect for diving, snorkeling, and relaxation. Best time to visit: November to April.',
-      videoUrl: 'https://www.youtube.com/embed/RScekDK5bPM'
-    },
-    'tokyo': {
-      name: 'Tokyo',
-      country: 'Japan',
-      description: 'A vibrant blend of traditional culture and modern technology. Experience ancient temples, incredible food, cherry blossoms, and cutting-edge technology. Best time to visit: March to May or September to November.',
-      videoUrl: 'https://www.youtube.com/embed/DqE4eJanJv4'
-    },
-    'swiss-alps': {
-      name: 'Swiss Alps',
-      country: 'Switzerland',
-      description: 'Majestic mountain peaks, pristine lakes, charming villages, and world-class skiing. Experience breathtaking scenery, hiking trails, and Swiss chocolate. Best time to visit: December to March for skiing, June to September for hiking.',
-      videoUrl: 'https://www.youtube.com/embed/vRVUCOw4rRQ'
-    },
-    'italy': {
-      name: 'Italy',
-      country: 'Italy',
-      description: 'Pizza.',
-      videoUrl: 'https://www.youtube.com/embed/h656vyNvAko'
-    }
+  res.render("searchresults", { query: queryRaw, results });
+});
 
+// Optional: if someone visits /search by URL directly (GET)
+app.get("/search", requireLogin, (req, res) => {
+  res.render("searchresults", { query: "", results: [] });
+});
 
-
-
-  };
-
-  const destination = destinations[destinationName.toLowerCase()];
-
-  if (!destination) {
-    return res.send('Destination not found');
-  }
-
-  const user = await usersCollection.findOne({ _id: new ObjectId(req.session.userId) });
-
-  const alreadyInList = user.wantToGoList && user.wantToGoList.includes(destination.name);
-
-
-  let errorMessage = null;
-  let successMessage = null;
-
-  if (req.query.error === 'already') {
-    errorMessage = 'This destination is already in your want-to-go list!';
-  }
-  if (req.query.success === 'added') {
-    successMessage = 'Successfully added to your want-to-go list!';
-  }
-
-  res.render('destination', { 
-    destination: destination,
-    error: errorMessage,
-    success: successMessage,
-    alreadyInList: alreadyInList,
-    username: req.session.username
+// logout
+app.get("/logout", (req, res) => {
+  req.session.destroy(() => {
+    res.redirect("/login");
   });
 });
 
-
-
-app.get('/home', (req, res) => {
-  if (!req.session.userId) {
-    return res.redirect('/login');
-  }
-  res.render('home', { username: req.session.username });
-});
-
-
-
-app.get('/', (req, res) => {
-  res.redirect('/login');
-});
-
-
+// --------- Start server ---------
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
-  console.log('Go to http://localhost:8080/register to test registration');
+  console.log(`Go to http://localhost:${PORT}/register to test registration`);
 });

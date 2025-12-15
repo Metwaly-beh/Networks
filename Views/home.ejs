@@ -1,110 +1,100 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Home - Travel Website</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            max-width: 900px;
-            margin: 20px auto;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        .container {
-            background-color: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            background-image: url("background3.jpg");
+            background-repeat: no-repeat;
+            background-size: 100%;
         }
         h1 {
-            color: #333;
-            border-bottom: 3px solid #4CAF50;
-            padding-bottom: 10px;
-        }
-        .welcome {
-            font-size: 18px;
-            color: #666;
-            margin-bottom: 30px;
-        }
-        .want-to-go-button {
-            background-color: #FF5722;
             color: white;
-            padding: 15px 30px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            text-decoration: none;
-            display: inline-block;
-            margin-bottom: 30px;
+            text-align: center;
+            -webkit-text-stroke: 1px blue;
         }
-        .want-to-go-button:hover {
-            background-color: #E64A19;
+        .cont {
+            position: relative;
+            left: 600px;
+            top: 50px;
+            color: white;
+            -webkit-text-stroke: 0.5px black;
         }
-        .categories {
-            margin-top: 20px;
+        .container1 {
+            position: fixed;
+            left: 50px;
+            top: 150px;
+            color: white;
         }
-        .category-item {
-            background-color: #f9f9f9;
-            padding: 20px;
-            margin-bottom: 15px;
-            border-radius: 8px;
-            border-left: 5px solid #4CAF50;
+        .container2 {
+            position: fixed;
+            left: 200px;
+            top: 150px;
+            color: white;
         }
-        .category-item a {
-            text-decoration: none;
-            color: #333;
-            font-size: 20px;
-            font-weight: bold;
+        .container3 {
+            position: fixed;
+            left: 350px;
+            top: 150px;
+            color: white;
         }
-        .category-item a:hover {
-            color: #4CAF50;
-        }
-        .logout {
-            float: right;
-            color: #666;
-            text-decoration: none;
-        }
-        .logout:hover {
-            color: #333;
+        .wanttogo {
+            position: fixed;
+            left: 80px;
+            top: 370px;
         }
     </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Destinations</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
 </head>
+
 <body>
-    <div class="container">
-        <a href="/login" class="logout">Logout</a>
-        
-        <h1>Welcome to Travel Destinations</h1>
-        <p class="welcome">Hello, <strong><%= username %></strong>! 👋</p>
-        
-        <a href="/want-to-go-list" class="want-to-go-button">
-            📋 View My Want-to-Go List
-        </a>
-        
-        <h2>Explore Destinations by Category</h2>
-        <div class="categories">
-            <div class="category-item">
-                <a href="/category/beaches">🏖️ Beaches</a>
-            </div>
-            <div class="category-item">
-                <a href="/category/mountains">⛰️ Mountains</a>
-            </div>
-            <div class="category-item">
-                <a href="/category/cities">🏙️ Cities</a>
-            </div>
-            <div class="category-item">
-                <a href="/category/islands">🏝️ Islands</a>
-            </div>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-2">
+        <a class="navbar-brand" style="color: rgb(191, 255, 161)">Destinations</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav mr-auto">
+            </ul>
+            <form method="POST" action='/search' class="form-inline my-2 my-lg-0">
+                <input class="form-control mr-sm-2" name="Search" type="search" placeholder="Search"
+                    aria-label="Search">
+                <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
+            </form>
         </div>
-        
-        <h3>Quick Access to Destinations:</h3>
-        <ul>
-            <li><a href="/destination/paris">Paris, France</a></li>
-            <li><a href="/destination/maldives">Maldives</a></li>
-            <li><a href="/destination/tokyo">Tokyo, Japan</a></li>
-            <li><a href="/destination/swiss-alps">Swiss Alps, Switzerland</a></li>
-            <li><a href="/destination/italy">italy</a></li>
-        </ul>
+    </nav>
+
+    <div class="container">
+        <h1>Welcome</h1>
+    </div>
+    <div class="container1">
+        <img id="image" src="/hiking.png" width="100" height="100">
+        <br>
+        <label class="ml-4 my-2">Hiking</label>
+        <br>
+        <button onclick="location.href = '/hiking';" id="hiking" class="btn btn-secondary ml-3"> View </button>
+    </div>
+    <div class="container2">
+        <img id="image" src="/cities.png" width="100" height="100">
+        <br>
+        <label class="ml-4 my-2">Cities</label>
+        <br>
+        <button onclick="location.href = '/cities';" id="cities" class="btn btn-secondary ml-3"> View </button>
+    </div>
+    <div class="container3">
+        <img id="image" src="/islands.png" width="100" height="100">
+        <br>
+        <label class="ml-4 my-2">Islands</label>
+        <br>
+        <button onclick="location.href = '/islands';" id="islands" class="btn btn-secondary ml-3"> View </button>
+    </div>
+    <div class="wanttogo">
+        <button onclick="location.href = '/wanttogo';" id="wanttogo" class="btn btn-secondary ml-3" style="width: 300px;">Want-to-Go List</button>
     </div>
 </body>
 </html>
